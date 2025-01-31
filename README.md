@@ -166,4 +166,4 @@ node scripts/restoreDatabase.js
 
 ## License
 
-MIT License 
+MIT License
