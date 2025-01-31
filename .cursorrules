@@ -1,0 +1,170 @@
+Here’s a detailed plan for your school book borrowing project:
+
+---
+
+### **Project Overview**
+Create a book borrowing system for two fourth-grade classes (4/1 and 4/2) using MongoDB and Node.js. The system will:
+- Allow students to log in and view a personalized dashboard.
+- Display available books (excluding those already borrowed).
+- Track borrowing and return times.
+- Provide a progress report of borrowed books.
+- Include quizzes for borrowed books with an accumulated score system.
+-- Quizzes will be provided in json format to be imported as multichoice questions.
+-- questions in quizzes will be editable individually for each book.
+-- affective domain will be evaluated for each book with smilely icons
+-- Books will be evaluated based on the popularity of the book amongst all children.
+-- Reports will be made available for the Admin to download and print off.
+
+
+---
+
+### **Step-by-Step Plan**
+
+#### **1. Initial Setup**
+1. **Environment Configuration**
+   - Ensure `mongod.exe` and `node.exe` paths are active.
+   - Choose a port (e.g., 4000).
+   - Initialize a Node.js project:
+     ```bash
+     npm init -y
+     npm install express mongoose body-parser bcrypt jsonwebtoken cors
+     ```
+
+2. **Database Setup**
+   - Create a MongoDB database named `SchoolLibrary`.
+   - Define collections:
+     - **Users**: Store student login details, class (4/1 or 4/2), and progress data.
+     - **Books**: Store book details (title, author, description, etc.).
+     - **BorrowedBooks**: Track borrowed book records with timestamps.
+     - **Quizzes**: Store quiz questions and answers for each book.
+
+3. **Project Directory Structure**
+   ```
+   project/
+   ├── server.js
+   ├── models/
+   │   ├── user.js
+   │   ├── book.js
+   │   ├── borrowedBook.js
+   │   └── quiz.js
+   ├── routes/
+   │   ├── auth.js
+   │   ├── books.js
+   │   ├── borrow.js
+   │   └── quizzes.js
+   ├── middleware/
+   │   └── authMiddleware.js
+   └── config/
+       └── db.js
+   ```
+   database D:\P4-books-V2\data\db
+   database D:\P4-books-V2\data\log
+   project root D:\P4-books-V2\
+	D:\P4-books-V2\book-lists\G4-1-books.txt
+	D:\P4-books-V2\book-lists\G4-2-books.txt
+	D:\P4-books-V2\student-lists\G4-1-students.txt
+	D:\P4-books-V2\student-lists\G4-2-students.txt
+---
+
+#### **2. User Authentication**
+1. **Login and Registration**
+   - Use bcrypt for password hashing.
+   - Use JWT for authentication tokens.
+   - use HTTPS://
+
+2. **Middleware**
+   - Create an `authMiddleware.js` to protect routes:
+     ```javascript
+     const jwt = require('jsonwebtoken');
+     const authMiddleware = (req, res, next) => {
+         const token = req.header('Authorization');
+         if (!token) return res.status(401).send('Access Denied');
+         try {
+             const verified = jwt.verify(token, process.env.JWT_SECRET);
+             req.user = verified;
+             next();
+         } catch (err) {
+             res.status(400).send('Invalid Token');
+         }
+     };
+     module.exports = authMiddleware;
+     ```
+
+---
+
+#### **3. Book Management**
+1. **Admin Features**
+   - Add books to the database.
+   - Update or delete book records.
+   - student lists are copied from excel files and pasted with students full name followed by nickname.
+   - students lists may need to be cleaned before uploading.
+   - book lists are text files, one line per name, may need cleaning before importing.
+
+2. **Student Features**
+   - Fetch available books (filter by `not borrowed`).
+   - Borrow books (log timestamps and student details).
+   - Return books.
+
+---
+
+#### **4. Dashboard**
+1. **Student Dashboard**
+   - Display borrowed books and progress reports.
+   - Display available books.
+   - Allow students to start or view quizzes for borrowed books.
+
+2. **Class Segregation**
+   - Filter books and records by class (4/1 or 4/2) based on the logged-in student.
+3. **Future arrangements**
+	- book lists will be swappable amongst classes.
+	- additional classes maybe added in the future to include fifth-grade and third-grade.
+	
+
+---
+
+#### **5. Quiz and Scoring**
+1. **Quiz Management**
+   - Create quiz questions for each book.
+   - Store questions and answers in the `Quizzes` collection.
+
+2. **Student Interaction**
+   - Fetch and display quiz questions for borrowed books.
+   - Submit answers and calculate scores.
+
+3. **Readership Score**
+   - Update accumulated score in the `Users` collection after quiz completion.
+
+---
+
+#### **6. API Endpoints**
+1. **Authentication**
+   - POST `/register` (Register student).
+   - POST `/login` (Authenticate student).
+
+2. **Books**
+   - GET `/books` (Fetch available books).
+   - POST `/books/borrow` (Borrow a book).
+   - POST `/books/return` (Return a book).
+
+3. **Progress**
+   - GET `/progress` (Fetch student progress).
+
+4. **Quizzes**
+   - GET `/quizzes/:bookId` (Fetch quiz for a specific book).
+   - POST `/quizzes/:bookId` (Submit answers).
+
+---
+
+#### **7. Frontend Suggestions**
+1. Use a simple framework like React or a templating engine like EJS for a user-friendly interface.
+2. Ensure mobile compatibility for easier student access.
+
+---
+
+#### **8. Additional Ideas**
+1. **Leaderboards**
+   - Display top readers based on their readership scores.
+2. **Recommendations**
+   - Recommend books based on student preferences or popularity.
+3. **Notifications**
+   - Send reminders for book returns or new quiz availability.
