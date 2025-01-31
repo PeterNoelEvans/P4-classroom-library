@@ -16,11 +16,11 @@ A digital library management system designed for fourth-grade classes (4/1 and 4
 
 ## Prerequisites
 
-- Node.js
-- MongoDB (running on port 27018)
+- Node.js (v14 or higher)
+- MongoDB (v4.4 or higher)
 - Git
 
-## Installation
+## Initial Setup
 
 1. Clone the repository:
 ```bash
@@ -33,21 +33,85 @@ cd P4-classroom-library
 npm install
 ```
 
-3. Create data directories:
+3. Create required directories:
 ```bash
 mkdir -p data/db
 mkdir -p data/log
+mkdir -p backups
 ```
 
-4. Set up your book and student lists in:
-- `book-lists/G4-1-books.txt`
-- `book-lists/G4-2-books.txt`
-- `student-lists/G4-1-students.txt`
-- `student-lists/G4-2-students.txt`
+## MongoDB Setup
 
-## Configuration
+1. Install MongoDB Community Edition from [MongoDB Download Center](https://www.mongodb.com/try/download/community)
 
-1. Create a `.env` file with:
+2. Add MongoDB to your system PATH (Windows):
+   - Default path: `C:\Program Files\MongoDB\Server\{version}\bin`
+
+3. Start MongoDB:
+```bash
+# Using the provided batch file:
+start_mongodb.bat
+
+# Or manually:
+mongod --dbpath="D:/P4-books-V2/data/db" --port 27018
+```
+
+## Data Preparation
+
+1. Prepare student lists:
+   - Create `student-lists/G4-1-students.txt` and `G4-2-students.txt`
+   - Format: `Full Name    Nickname` (tab-separated)
+   - Example:
+     ```
+     John Smith    Johnny
+     Mary Jones    May
+     ```
+
+2. Prepare book lists:
+   - Create `book-lists/G4-1-books.txt` and `G4-2-books.txt`
+   - One book title per line
+   - Example:
+     ```
+     The Magic Key
+     Underground Adventure
+     ```
+
+3. Clean and verify data:
+```bash
+# Check student data format
+node scripts/checkStudentData.js
+
+# Clean student data
+node scripts/cleanStudentData.js
+
+# Check book data
+node scripts/checkBooks.js
+```
+
+## Database Population
+
+1. Import students:
+```bash
+node scripts/importStudents.js
+```
+
+2. Import books:
+```bash
+node scripts/importBooks.js
+```
+
+3. Verify imports:
+```bash
+# Check students
+node scripts/checkUsers.js
+
+# Check books
+node scripts/checkBooks.js
+```
+
+## Environment Configuration
+
+1. Create `.env` file in project root:
 ```env
 PORT=4000
 MONGODB_URL=mongodb://127.0.0.1:27018/SchoolLibrary
@@ -57,71 +121,48 @@ ADMIN_PASSWORD=your-admin-password
 
 ## Running the Application
 
-1. Start MongoDB:
+1. Start all services:
 ```bash
-mongod --dbpath="D:/P4-books-V2/data/db" --port 27018
+# Using batch file:
+start_all.bat
+
+# Or manually:
+start mongod --dbpath="D:/P4-books-V2/data/db" --port 27018
+node server.js
 ```
 
-2. Start the server:
-```bash
-npm start
-```
-
-Or use the provided batch files:
-- `start_mongodb.bat`
-- `start_server.bat`
-- `start_all.bat`
-
-## Usage
-
-1. Access the application:
+2. Access the application:
 - Student interface: `http://localhost:4000`
 - Admin interface: `http://localhost:4000/admin-login.html`
 
-2. Import initial data:
-```bash
-node scripts/importStudents.js
-node scripts/importBooks.js
-```
-
-## Directory Structure
-
-```
-project/
-├── server.js
-├── models/
-│   ├── user.js
-│   ├── book.js
-├── routes/
-│   ├── auth.js
-│   ├── books.js
-│   ├── admin.js
-├── middleware/
-│   ├── authMiddleware.js
-│   ├── adminMiddleware.js
-├── public/
-│   ├── index.html
-│   ├── login.html
-│   ├── admin.html
-├── book-lists/
-│   ├── G4-1-books.txt
-│   ├── G4-2-books.txt
-├── student-lists/
-│   ├── G4-1-students.txt
-│   ├── G4-2-students.txt
-└── scripts/
-    ├── importBooks.js
-    ├── importStudents.js
-    └── various utility scripts
-```
-
 ## Backup and Recovery
 
-Use the provided scripts:
+1. Create backup:
 ```bash
 node scripts/backupDatabase.js
+```
+
+2. Restore from backup:
+```bash
 node scripts/restoreDatabase.js
 ```
+
+## Troubleshooting
+
+1. If MongoDB fails to start:
+   - Check if the data directory exists and is writable
+   - Ensure port 27018 is not in use
+   - Check MongoDB logs in data/log
+
+2. If student import fails:
+   - Run `checkStudentData.js` to verify data format
+   - Clean data using `cleanStudentData.js`
+   - Check for duplicate entries
+
+3. If book import fails:
+   - Verify book list format
+   - Check for duplicate titles
+   - Run `checkBooks.js` to verify database state
 
 ## License
 
