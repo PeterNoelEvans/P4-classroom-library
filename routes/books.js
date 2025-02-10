@@ -60,68 +60,49 @@ router.post('/borrow/:id', protect, async (req, res) => {
 // Return a book
 router.post('/return/:id', protect, async (req, res) => {
     try {
+        console.log('Return request for book:', req.params.id);
+        console.log('User:', req.user._id);
+        
         const book = await Book.findOne({
             _id: req.params.id,
             currentBorrower: req.user._id
         });
         
         if (!book) {
-            return res.status(404).json({ message: 'Book not found' });
+            console.log('Book not found or not borrowed by user');
+            return res.status(404).json({ message: 'Book not found or not borrowed by you' });
         }
 
-        // Update user's reading record FIRST
+        // Update user's reading record
         const user = await User.findById(req.user._id);
         if (!user.booksRead) user.booksRead = [];
         
-        // Only increment score if this is a new book for the user
         if (!user.booksRead.includes(book._id)) {
-            console.log(`Adding book ${book.title} to ${user.fullName}'s reading history`);
+            console.log('Adding book to user reading history');
             user.booksRead.push(book._id);
             user.readingScore = (user.readingScore || 0) + 1;
-            
-            console.log('Updated user reading stats:', {
-                userId: user._id,
-                name: user.fullName,
-                newScore: user.readingScore,
-                totalBooksRead: user.booksRead.length
-            });
-            
             await user.save();
         }
 
-        // Then update the book's history
+        // Update book's history
         const lastBorrowIndex = book.borrowHistory.length - 1;
         if (lastBorrowIndex >= 0) {
             book.borrowHistory[lastBorrowIndex].returnedAt = new Date();
             if (req.body.affectiveScore) {
                 book.borrowHistory[lastBorrowIndex].affectiveScore = req.body.affectiveScore;
-                
-                // Update book's rating statistics
-                const validRatings = book.borrowHistory
-                    .filter(h => h.affectiveScore)
-                    .map(h => h.affectiveScore);
-                
-                book.averageRating = validRatings.reduce((a, b) => a + b, 0) / validRatings.length;
-                book.totalRatings = validRatings.length;
             }
         }
 
-        // Update book stats
+        // Update book status
         book.currentBorrower = null;
         book.totalReads = (book.totalReads || 0) + 1;
         await book.save();
 
-        console.log('Book return complete:', {
-            bookTitle: book.title,
-            averageRating: book.averageRating,
-            userBooksRead: user.booksRead.length,
-            userScore: user.readingScore
-        });
-
+        console.log('Book return completed successfully');
         res.json(book);
     } catch (error) {
         console.error('Error returning book:', error);
-        res.status(500).json({ message: 'Error returning book' });
+        res.status(500).json({ message: 'Error returning book: ' + error.message });
     }
 });
 
@@ -171,15 +152,22 @@ router.get('/history', protect, async (req, res) => {
 });
 
 // Quiz-related routes
-// Get quiz questions (public access)
-router.get('/:id/quiz/questions', async (req, res) => {
+// Get quiz for a book
+router.get('/:id/quiz', protect, async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
         if (!book) {
             return res.status(404).json({ message: 'Book not found' });
         }
+
+        // If there are no quiz questions, return empty array
+        if (!book.quizQuestions || book.quizQuestions.length === 0) {
+            return res.json({ questions: [] });
+        }
+
         res.json({ questions: book.quizQuestions });
     } catch (error) {
+        console.error('Error fetching quiz:', error);
         res.status(500).json({ message: 'Error fetching quiz' });
     }
 });
